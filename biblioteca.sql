@@ -1,50 +1,73 @@
-create table editoriales(
-codigo varchar(50) not null primary key,
-nombre varchar(100)not null
+CREATE TABLE editoriales (
+  codigo SERIAL PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL
 );
 
-create table libros (
-codigo varchar(50) not null primary key,
-titulo varchar (50)not null,
-codigo_editorial varchar(50) references editoriales(codigo)
+CREATE TABLE libros (
+  codigo SERIAL PRIMARY KEY,
+  titulo VARCHAR(50) NOT NULL,
+  codigo_editorial INT REFERENCES editoriales(codigo)
 );
 
---consulta tablas
-select * from editoriales;
-select * from libros;
+-- Consultar tablas
+SELECT * FROM editoriales;
+SELECT * FROM libros;
 
---modifica columnas autor y precio
+-- Insertar editoriales
+INSERT INTO editoriales (nombre) VALUES ('Anaya');
+INSERT INTO editoriales (nombre) VALUES ('Andina');
+INSERT INTO editoriales (nombre) VALUES ('S.M.');
+
+--update editoriales set nombre = 'andina' where codigo= 2;
+
+-- Modificar columnas autor y precio
 ALTER TABLE libros
 ADD COLUMN autor VARCHAR(100),
-ADD COLUMN precio DECIMAL(10,2)
-
-INSERT INTO editoriales (codigo, nombre) VALUES ('Anaya', 'Anaya');
-INSERT INTO editoriales (codigo, nombre) VALUES ('Andina', 'Andina');
-INSERT INTO editoriales (codigo, nombre) VALUES ('S.M.', 'S.M.');
+ADD COLUMN precio DECIMAL(10,2);
 
 -- Insertar libros
-INSERT INTO libros (codigo, titulo, codigo_editorial, autor, precio)
-VALUES ('1', 'Don Quijote de La Mancha I', 'Anaya', 'Miguel de Cervantes', 150);
-INSERT INTO libros (codigo, titulo, codigo_editorial, autor, precio)
-VALUES ('2', 'El principito', 'Andina', 'Antoine Saint-Exupery', 120);
-INSERT INTO libros (codigo, titulo, codigo_editorial, autor, precio)
-VALUES ('3', 'El príncipe', 'S.M.', 'Maquiavelo', 180);
-INSERT INTO libros (codigo, titulo, codigo_editorial, autor, precio)
-VALUES ('4', 'Diplomacia', 'S.M.', 'Henry Kissinger', 170);
-INSERT INTO libros (codigo, titulo, codigo_editorial, autor, precio)
-VALUES ('5', 'Don Quijote de La Mancha II', 'Anaya', 'Miguel de Cervantes', 140);
+INSERT INTO libros (titulo, codigo_editorial, autor, precio)
+VALUES ('Don Quijote de La Mancha I', 1, 'Miguel de Cervantes', 150),
+       ('El principito', 2, 'Antoine Saint-Exupery', 120),
+       ('El príncipe', 3, 'Maquiavelo', 180),
+       ('Diplomacia', 3, 'Henry Kissinger', 170),
+       ('Don Quijote de La Mancha II', 1, 'Miguel de Cervantes', 140);
 
---inserta nuevos libros
+
+--Insertar 2 nuevos libros
+
+-- Insertar nuevos libros
+INSERT INTO libros (codigo, titulo, codigo_editorial, autor, precio)
+VALUES (6, 'Violeta', (SELECT codigo FROM editoriales WHERE nombre = 'Anaya'), 'isabel allende', 130);
 
 INSERT INTO libros (codigo, titulo, codigo_editorial, autor, precio)
-VALUES ('6', 'Violeta', 'Anaya', 'isabel allende', 130);
-INSERT INTO libros (codigo, titulo, codigo_editorial, autor, precio)
-VALUES ('7', 'hijos sin padre', 'Andina', 'carlos pena', 170);
+VALUES (7, 'hijos sin padre', (SELECT codigo FROM editoriales WHERE nombre = 'Andina'), 'carlos pena', 170);
 
---
-
-START TRANSACTION;
-
-DELETE FROM libros WHERE codigo_editorial = 'Anaya';
-
+-- Eliminar los libros de la editorial Anaya, solo en memoria (ROLLBACK)
+BEGIN;
+DELETE FROM libros
+WHERE codigo_editorial = (SELECT codigo FROM editoriales WHERE nombre = 'Anaya');
 ROLLBACK;
+
+-- Actualizar el nombre de la editorial Andina a Iberlibro en memoria, y actualizar el nombre de la editorial S.M. a Mountain en disco duro (SAVEPOINT / ROLLBACK TO)
+-- actualiza nombres editorial Andina
+BEGIN;
+
+SAVEPOINT actualizar_editoriales;
+UPDATE editoriales
+SET nombre = 'Iberlibro'
+WHERE nombre = 'Andina';
+
+SAVEPOINT actualizar_nombres;
+UPDATE editoriales
+SET nombre = 'Mountain'
+WHERE nombre = 'S.M.';
+
+COMMIT;
+
+ROLLBACK TO actualizar_nombres;
+
+
+
+
+
